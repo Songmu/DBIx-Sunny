@@ -112,8 +112,7 @@ sub fill_arrayref {
 
     if (@bind == 1 && ref $bind[0] eq 'HASH') {
         ($query, my $bind) = SQL::NamedPlaceholder::bind_named($query, $bind[0]);
-        my $maybe_typed = scalar(grep { ref($_) } @$bind);
-        return ($query, $maybe_typed, @$bind);
+        return ($query, @$bind);
     }
 
     return expand_arrayref_placeholder($query, @bind);
