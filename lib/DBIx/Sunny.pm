@@ -33,7 +33,7 @@ sub connect {
 package DBIx::Sunny::db;
 our @ISA = qw(DBI::db);
 
-use DBIx::Sunny::Util qw/bind_and_execute/;
+use DBIx::Sunny::Util qw/bind_and_execute expand_arrayref_placeholder/;
 use DBIx::TransactionManager;
 use Scalar::Util qw/weaken/;
 use SQL::NamedPlaceholder 0.10;
@@ -117,20 +117,7 @@ sub fill_arrayref {
         return ($query, $maybe_typed, @$bind);
     }
 
-    my @bind_param;
-    $query =~ s{
-        \?
-    }{
-        my $bind = shift @bind;
-        if (ref($bind) && ref($bind) eq 'ARRAY') {
-            push @bind_param, @$bind;
-            join ',', ('?') x @$bind;
-        } else {
-            push @bind_param, $bind;
-            '?';
-        }
-    }gex;
-    return ( $query, @bind_param );
+    return expand_arrayref_placeholder($query, @bind);
 }
 
 sub __prepare_and_execute {

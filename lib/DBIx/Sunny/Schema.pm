@@ -6,7 +6,7 @@ use Carp qw/croak/;
 use parent qw/Class::Data::Inheritable/;
 use Class::Accessor::Lite;
 use Data::Validator;
-use DBIx::Sunny::Util qw/bind_and_execute/;
+use DBIx::Sunny::Util qw/bind_and_execute expand_arrayref_placeholder/;
 use DBIx::TransactionManager;
 use DBI qw/:sql_types/;
 use Scalar::Util qw/blessed/;
@@ -37,31 +37,8 @@ sub fill_arrayref {
         ($query, my $bind_param) = SQL::NamedPlaceholder::bind_named($query, $bind[0]);
         return $query, @$bind_param;
     }
-    my @bind_param;
-    my $modified_query = $query;
-    my $i=1;
-    for my $bind ( @bind ) {
-        if ( ref($bind) && ref($bind) eq 'ARRAY' ) {
-            my $array_query = substr('?,' x scalar(@{$bind}), 0, -1);
-            my $search_i=0;
-            my $replace_query = sub {
-                $search_i++;
-                if ( $search_i == $i ) {
-                    return $array_query;
-                }
-                return '?';
-            };
-            $modified_query =~ s/\?/$replace_query->()/ge;
-            push @bind_param, @{$bind};
-        }
-        else {
-            push @bind_param, $bind;
-        }
-        $i++;
-    }
-    return ($modified_query, @bind_param);
+    return expand_arrayref_placeholder($query, @bind);
 }
-
 
 sub select_one {
     my $class = shift;
@@ -306,19 +283,8 @@ sub __setup_accessor {
             ($query, my $bind_param) = SQL::NamedPlaceholder::bind_named($query, $args);
             return $bind_and_execute->($self->dbh, $query, @$bind_param)
         }
-
-        my @keys = @bind_keys;
-        my @bind_param;
-        $query =~ s{\?}{
-            my $bind = $args->{ shift @keys };
-            if (ref($bind) && ref($bind) eq 'ARRAY') {
-                push @bind_param, @$bind;
-                join ',', ('?') x @$bind;
-            } else {
-                push @bind_param, $bind;
-                '?';
-            }
-        }ge;
+        my @bind_param = map { $args->{$_} } @bind_keys;
+        ($query, @bind_param) = expand_arrayref_placeholder($query, @bind_param);
 
         return $bind_and_execute->($self->dbh, $query, @bind_param)
     };
