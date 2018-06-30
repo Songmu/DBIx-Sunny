@@ -169,7 +169,7 @@ sub args {
                 $deflater{$name} = $deflater;
             }
             push @rules, $name, $rule;
-        } 
+        }
         $deflaters->{$method} = \%deflater;
         $validators->{$method} = Data::Validator->new(@rules);
     }
@@ -182,7 +182,7 @@ sub args {
         @caller_args = @DB::args;
     }
     local $Carp::CarpLevel = 3;
-    local $Carp::Internal{'Data::Validator'} = 1;   
+    local $Carp::Internal{'Data::Validator'} = 1;
     my $result = $validators->{$method}->validate(@caller_args);
 
     if ( my @deflaters = keys %{$deflaters->{$method}} ) {

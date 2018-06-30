@@ -25,9 +25,7 @@ sub bind_and_execute {
 sub expand_arrayref_placeholder {
     my ($query, @bind) = @_;
     my @bind_param;
-    $query =~ s{
-        \?
-    }{
+    $query =~ s{\?}{
         my $bind = shift @bind;
         if (ref($bind) && ref($bind) eq 'ARRAY') {
             push @bind_param, @$bind;
@@ -36,7 +34,7 @@ sub expand_arrayref_placeholder {
             push @bind_param, $bind;
             '?';
         }
-    }gex;
+    }ge;
     return ( $query, @bind_param );
 }
 

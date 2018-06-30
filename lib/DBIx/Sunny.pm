@@ -107,8 +107,7 @@ sub do {
 }
 
 sub fill_arrayref {
-    my $self = shift;
-    my ($query, @bind) = @_;
+    my ($self, $query, @bind) = @_;
     return if ! defined $query;
 
     if (@bind == 1 && ref $bind[0] eq 'HASH') {
@@ -122,7 +121,7 @@ sub fill_arrayref {
 
 sub __prepare_and_execute {
     my $self = shift;
-    my ($query, @bind) = @_;
+    my ($query, @bind) = $self->fill_arrayref(@_);
     my $sth = $self->prepare($query);
     my $ret = bind_and_execute($sth, @bind);
     return ($sth, $ret);
@@ -130,8 +129,7 @@ sub __prepare_and_execute {
 
 sub select_one {
     my $self = shift;
-    my ($query, @bind) = $self->fill_arrayref(@_);
-    my ($sth, $ret) = $self->__prepare_and_execute($query, @bind);
+    my ($sth, $ret) = $self->__prepare_and_execute(@_);
     my $row = $ret && $sth->fetchrow_arrayref;
     return unless $row;
     return $row->[0];
@@ -139,8 +137,7 @@ sub select_one {
 
 sub select_row {
     my $self = shift;
-    my ($query, @bind) = $self->fill_arrayref(@_);
-    my ($sth, $ret) = $self->__prepare_and_execute($query, @bind);
+    my ($sth, $ret) = $self->__prepare_and_execute(@_);
     my $row = $ret && $sth->fetchrow_hashref;
     return unless $row;
     return $row;
@@ -148,16 +145,14 @@ sub select_row {
 
 sub select_all {
     my $self = shift;
-    my ($query, @bind) = $self->fill_arrayref(@_);
-    my ($sth, $ret) = $self->__prepare_and_execute($query, @bind);
+    my ($sth, $ret) = $self->__prepare_and_execute(@_);
     my $rows = $ret && $sth->fetchall_arrayref({});
     return $rows;
 }
 
 sub query {
     my $self = shift;
-    my ($query, @bind) = $self->fill_arrayref(@_);
-    (undef, my $ret) = $self->__prepare_and_execute($query, @bind);
+    (undef, my $ret) = $self->__prepare_and_execute(@_);
     return $ret;
 }
 
