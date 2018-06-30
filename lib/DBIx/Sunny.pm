@@ -33,10 +33,9 @@ sub connect {
 package DBIx::Sunny::db;
 our @ISA = qw(DBI::db);
 
-use DBIx::Sunny::Util qw/bind_and_execute expand_arrayref_placeholder/;
+use DBIx::Sunny::Util qw/bind_and_execute expand_placeholder/;
 use DBIx::TransactionManager;
 use Scalar::Util qw/weaken/;
-use SQL::NamedPlaceholder 0.10;
 
 sub connected {
     my $dbh = shift;
@@ -107,20 +106,13 @@ sub do {
 }
 
 sub fill_arrayref {
-    my ($self, $query, @bind) = @_;
-    return if ! defined $query;
-
-    if (@bind == 1 && ref $bind[0] eq 'HASH') {
-        ($query, my $bind) = SQL::NamedPlaceholder::bind_named($query, $bind[0]);
-        return ($query, @$bind);
-    }
-
-    return expand_arrayref_placeholder($query, @bind);
+    my $self = shift;
+    return expand_placeholder(@_);
 }
 
 sub __prepare_and_execute {
     my $self = shift;
-    my ($query, @bind) = $self->fill_arrayref(@_);
+    my ($query, @bind) = expand_placeholder(@_);
     my $sth = $self->prepare($query);
     my $ret = bind_and_execute($sth, @bind);
     return ($sth, $ret);
